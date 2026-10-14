@@ -1,0 +1,22 @@
+{
+  "name": "unidev-dashboard",
+  "private": true,
+  "type": "module",
+  "description": "UNIDEV 통합 정보 관리 대시보드",
+  "scripts": {
+    "db:init": "node scripts/db-cluster.mjs init",
+    "db:start": "node scripts/db-cluster.mjs start",
+    "db:stop": "node scripts/db-cluster.mjs stop",
+    "db:status": "node scripts/db-cluster.mjs status",
+    "db:reset": "node scripts/db-reset.mjs",
+    "db:reset:empty": "node scripts/db-reset.mjs --empty",
+    "db:test": "node scripts/db-test.mjs",
+    "db:bundle": "node scripts/bundle-migrations.mjs",
+    "dev": "node scripts/dev-server.mjs",
+    "db:reset:sample": "node scripts/db-reset.mjs --sample",
+    "db:import": "python scripts/import-roster.py"
+  },
+  "engines": {
+    "node": ">=20.12"
+  }
+}

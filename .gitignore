@@ -1,0 +1,10 @@
+.env
+node_modules/
+tools/
+*.log
+dist/
+.pgdata/
+
+# 실제 개인정보: 원본 명단과 거기서 만든 SQL은 저장소에 올리지 않는다
+*.xlsx
+db/private/
