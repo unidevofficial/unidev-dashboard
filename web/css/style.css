@@ -105,6 +105,8 @@ h3 { font-size: 14px; font-weight: 650; }
 .env-badge { display: inline-block; font-size: 11px; padding: 1px 6px; border-radius: 4px; background: var(--warn-soft); color: var(--warn); margin-bottom: 8px; }
 
 .main { min-width: 0; }
+/* 모바일 메뉴용 배경 덮개: 기본은 숨김 (PC에서 그리드 칸을 차지하지 않도록) */
+.nav-backdrop { display: none; }
 .topbar { display: none; }
 .content { max-width: 1240px; margin: 0 auto; padding: 28px 32px 64px; }
 .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
