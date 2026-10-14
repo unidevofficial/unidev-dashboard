@@ -185,6 +185,49 @@ begin
 end $$;
 
 -- =====================================================================
+-- 대표자 계정이 자기 동아리 대표자 이력 관리 (픽셀랩)
+-- =====================================================================
+set local request.jwt.claim.sub = '00000000-0000-0000-0000-000000000004';
+do $$
+declare
+  v_new uuid;
+  n int;
+  v_rep smallint := (select id from public.roles where code = 'representative');
+begin
+  -- 지난 대표자 기록의 기간 수정
+  update public.role_assignments set start_on = '2025-02-01'
+   where club_id = 'c0000000-0000-0000-0000-000000000001' and member_id = 'b0000000-0000-0000-0000-000000000021';
+  get diagnostics n = row_count;
+  assert n = 1, 'FAIL: 대표자 계정이 자기 동아리 대표자 이력을 수정하지 못함';
+
+  -- 다른 동아리 대표자 이력·팀 배정·대리인 배정은 불가
+  update public.role_assignments set note = 'x' where club_id = 'c0000000-0000-0000-0000-000000000002';
+  get diagnostics n = row_count;
+  assert n = 0, 'FAIL: 다른 동아리 대표자 이력을 수정함';
+  update public.role_assignments set note = 'x' where team_id is not null;
+  get diagnostics n = row_count;
+  assert n = 0, 'FAIL: 팀 배정을 수정함';
+  begin
+    insert into public.role_assignments (member_id, role_id, club_id)
+    values ('b0000000-0000-0000-0000-000000000016', (select id from public.roles where code = 'proxy'), 'c0000000-0000-0000-0000-000000000001');
+    raise exception 'FAIL: 대표자 계정이 대리인을 배정함';
+  exception when insufficient_privilege then null;
+  end;
+
+  -- 새 대표자 등록 → 교체
+  insert into public.members (name, club_id) values ('새 대표', 'c0000000-0000-0000-0000-000000000001') returning id into v_new;
+  begin
+    insert into public.members (name, club_id) values ('남의 동아리', 'c0000000-0000-0000-0000-000000000002');
+    raise exception 'FAIL: 다른 동아리 구성원을 등록함';
+  exception when insufficient_privilege then null;
+  end;
+  perform public.replace_representative('c0000000-0000-0000-0000-000000000001', v_new, current_date);
+  assert (select representative_id from public.v_club_overview where id = 'c0000000-0000-0000-0000-000000000001') = v_new,
+         'FAIL: 대표자 계정의 대표자 교체';
+  raise notice 'PASS 대표자 계정: 자기 동아리 대표자 이력만 관리';
+end $$;
+
+-- =====================================================================
 -- 관리자 (박지민, 행사팀장)
 -- =====================================================================
 set local request.jwt.claim.sub = '00000000-0000-0000-0000-000000000003';
@@ -198,6 +241,8 @@ declare
   n int;
 begin
   assert public.is_admin(), 'FAIL: 팀장은 관리자';
+  assert exists (select 1 from public.change_logs where table_name = 'role_assignments' and actor_club_id = 'c0000000-0000-0000-0000-000000000001'),
+         'FAIL: 대표자 계정의 대표자 교체 이력';
 
   -- 이력: 앞서 대표자가 수정한 기록이 처리자와 함께 남아 있어야 한다
   assert exists (select 1 from public.change_logs
@@ -317,7 +362,7 @@ begin
        = array['b0000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000002']::uuid[], 'FAIL: 회장단 출결 행 생성';
   assert not exists (select 1 from public.attendances where meeting_id = v_id and status <> 'absent'), 'FAIL: 기본값은 결석';
   assert (select member_id from public.attendances where meeting_id = v_id and club_id = 'c0000000-0000-0000-0000-000000000001')
-       = 'b0000000-0000-0000-0000-000000000004', 'FAIL: 당시 대표자 기록';
+       = (select representative_id from public.v_club_overview where id = 'c0000000-0000-0000-0000-000000000001'), 'FAIL: 당시 대표자 기록';
   assert (select member_id from public.attendances where meeting_id = v_id and club_id = 'c0000000-0000-0000-0000-000000000007') is null,
          'FAIL: 대표자 공석 동아리';
   begin

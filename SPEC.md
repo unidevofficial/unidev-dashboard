@@ -65,7 +65,7 @@ UNIDEV(전국대학생게임개발동아리연합회) 내부 정보 관리용 �
 
 - **관리자**: 관리자 계정, 또는 운영진 계정으로 로그인했고 연결된 구성원이 `is_admin` 역할(회장·부회장·팀장)을 현재 맡고 있음
 - **운영진**: 운영진 계정으로 로그인했고, 연결된 구성원이 현재 역할을 하나 이상 맡고 있음
-- **대표자**: 대표자 계정으로 로그인했고, 연결된 동아리가 정등록·가등록 상태임. 운영진과 같은 열람 권한에 더해 자기 동아리 정보·동아리 회장단·현직 대표자 연락처를 수정할 수 있음
+- **대표자**: 대표자 계정으로 로그인했고, 연결된 동아리가 정등록·가등록 상태임. 운영진과 같은 열람 권한에 더해 자기 동아리 정보·동아리 회장단·현직 대표자 연락처, 자기 동아리 대표자 이력(교체·기간 수정·삭제, 새 대표자 등록)을 관리할 수 있음
 - 현재 역할이 없는 운영진 계정, 심사 중·비활성 동아리의 대표자 계정은 로그인하더라도 아무것도 볼 수 없다.
 
 | 기능 | 관리자 | 운영진 | 대표자 |
@@ -275,8 +275,9 @@ create table change_logs (
 | 테이블 | select | insert/update/delete |
 |---|---|---|
 | clubs | `is_staff()` | 관리자. update는 `represents_club(id)`도 허용 (필드 제한은 트리거) |
-| members | `is_staff()` | 관리자. update는 본인(`current_member_id()`)과 자기 동아리 현직 대표자(`is_my_club_rep(id)`)도 허용 (필드 제한은 트리거) |
-| teams, roles, role_assignments | `is_staff()` | 관리자 |
+| members | `is_staff()` | 관리자. insert는 자기 동아리 소속이면 대표자 계정도. update는 본인(`current_member_id()`)과 자기 동아리 현직 대표자(`is_my_club_rep(id)`)도 허용 (필드 제한은 트리거) |
+| teams, roles | `is_staff()` | 관리자 |
+| role_assignments | `is_staff()` | 관리자. 자기 동아리의 대표자 역할 배정은 해당 대표자 계정도 (`represents_club(club_id)` 이고 대표자 역할) |
 | meetings, attendances, sanctions | `is_staff()` | 관리자 |
 | club_officers | `is_staff()` | 관리자, 해당 동아리 대표자 |
 | change_logs | 관리자 | 트리거만 기록 (직접 쓰기 불가) |

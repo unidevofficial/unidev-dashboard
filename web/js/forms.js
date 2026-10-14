@@ -116,12 +116,14 @@ export async function memberFields(m = {}, { admin, isNew = false }) {
   return f;
 }
 
-export async function createMemberForm(preset = {}) {
+// admin=false: 대표자(동아리) 계정이 자기 동아리 새 대표자를 등록할 때 (소속은 preset으로 고정)
+export async function createMemberForm(preset = {}, { admin = true } = {}) {
   return openForm({
-    title: '구성원 등록',
-    fields: await memberFields(preset, { admin: true, isNew: true }),
+    title: admin ? '구성원 등록' : '새 대표자 등록',
+    fields: await memberFields(preset, { admin, isNew: true }),
     submitLabel: '등록',
     onSubmit: async ({ consent, ...v }) => {
+      if (!admin) Object.assign(v, { club_id: preset.club_id, university: preset.university ?? null });
       if (!v.university && v.club_id) {
         const club = (await lookups.clubs()).find((c) => c.id === v.club_id);
         v.university = club?.university ?? null;

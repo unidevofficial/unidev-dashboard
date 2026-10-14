@@ -33,6 +33,9 @@ export async function render(el, { id }, ctx) {
   const meetingById = Object.fromEntries(meetings.map((m) => [m.id, m]));
 
   const canEdit = ctx.isAdmin || ctx.representsClub(id);
+  // 대표자 이력은 관리자와 이 동아리의 대표자 계정이 관리한다 (대리인 등 그 밖의 배정은 관리자만)
+  const canManageReps = canEdit;
+  const canManageAssign = (a) => ctx.isAdmin || (ctx.representsClub(id) && a.role_code === 'representative');
   const reps = clubAssigns.filter((a) => a.role_code === 'representative');
   const otherClubRoles = clubAssigns.filter((a) => a.role_code !== 'representative');
   const staffRows = sortKo(clubMembers.filter((m) => memberAssigns.some((a) => a.member_id === m.id)), (m) => m.name);
@@ -51,7 +54,7 @@ export async function render(el, { id }, ctx) {
       <div><h1>${club.name} ${statusBadge(club.status)}</h1><div class="sub">${club.university}</div></div>
       <div class="page-actions">
         ${canEdit ? html`<button class="btn" data-edit>정보 수정</button>` : ''}
-        ${ctx.isAdmin ? html`<button class="btn primary" data-replace-rep>${club.representative_id ? '대표자 교체' : '대표자 지정'}</button>` : ''}
+        ${canManageReps ? html`<button class="btn primary" data-replace-rep>${club.representative_id ? '대표자 교체' : '대표자 지정'}</button>` : ''}
       </div>
     </div>
 
@@ -107,13 +110,16 @@ export async function render(el, { id }, ctx) {
       <div class="card-head"><h2>대표자·대리인 이력</h2><span class="hint">역대 기록 포함</span></div>
       <div class="card-body flush table-wrap">
         ${clubAssigns.length ? html`<table class="table">
-          <thead><tr><th>역할</th><th>이름</th><th>기간</th><th>연락처</th>${ctx.isAdmin ? html`<th></th>` : ''}</tr></thead>
+          <thead><tr><th>역할</th><th>이름</th><th>기간</th><th>연락처</th>${canManageReps ? html`<th></th>` : ''}</tr></thead>
           <tbody>${clubAssigns.map((a) => html`<tr>
             <td>${a.role_name} ${a.is_current ? badge('ok', '현직') : ''}</td>
             <td><a href="#/members/${a.member_id}">${a.member_name}</a></td>
             <td>${fmtPeriod(a.start_on, a.end_on)}</td>
             <td class="small">${contactCell(a.member_id)}</td>
-            ${ctx.isAdmin ? html`<td>${a.is_current || (a.end_on ?? '9999') >= t ? html`<button class="btn xs" data-end="${a.id}">종료</button>` : ''}</td>` : ''}
+            ${canManageReps ? html`<td class="row" style="flex-wrap:nowrap">${canManageAssign(a) ? html`
+              ${a.is_current || (a.end_on ?? '9999') >= t ? html`<button class="btn xs" data-end="${a.id}">종료</button>` : ''}
+              ${a.role_code === 'representative' ? html`<button class="btn xs" data-edit-assign="${a.id}">수정</button>` : ''}
+              <button class="btn xs ghost" data-del-assign="${a.id}">삭제</button>` : ''}</td>` : ''}
           </tr>`)}</tbody></table>` : html`<div class="empty">기록이 없습니다.</div>`}
       </div>
     </div>
@@ -179,7 +185,9 @@ export async function render(el, { id }, ctx) {
   }));
 
   on(el, 'click', '[data-replace-rep]', guard(async () => {
-    const memberOpts = await memberPickOptions();
+    // 대표자 계정은 자기 동아리 소속 구성원 중에서만 고른다
+    const memberOpts = ctx.isAdmin ? await memberPickOptions()
+      : sortKo((await lookups.members()).filter((m) => m.club_id === id), (m) => m.name).map((m) => ({ value: m.id, label: m.name }));
     const result = await openForm({
       title: club.representative_id ? '대표자 교체' : '대표자 지정',
       description: (club.representative_id
@@ -187,7 +195,7 @@ export async function render(el, { id }, ctx) {
         : '새 대표자 배정을 추가합니다.') + ' ※ 변경 전 반드시 회장단에게 연락 부탁드립니다.',
       fields: [
         { name: 'mode', label: '새 대표자', type: 'select', required: true, value: 'existing',
-          options: [{ value: 'existing', label: '등록된 구성원 중에서 선택' }, { value: 'new', label: '새 구성원으로 등록' }] },
+          options: [{ value: 'existing', label: ctx.isAdmin ? '등록된 구성원 중에서 선택' : '동아리 소속 구성원 중에서 선택' }, { value: 'new', label: '새 구성원으로 등록' }] },
         { name: 'member_id', label: '구성원', type: 'pick', options: memberOpts, required: true, showIf: (v) => v.mode === 'existing' },
         { name: 'start_on', label: '시작일', type: 'date', value: today(), required: true },
       ],
@@ -197,7 +205,7 @@ export async function render(el, { id }, ctx) {
     if (!result) return;
     let memberId = result.member_id;
     if (result.mode === 'new') {
-      const m = await createMemberForm({ club_id: id, university: club.university });
+      const m = await createMemberForm({ club_id: id, university: club.university }, { admin: ctx.isAdmin });
       if (!m) return;
       memberId = m.id;
     }
@@ -210,6 +218,34 @@ export async function render(el, { id }, ctx) {
   on(el, 'click', '[data-add-proxy]', guard(async () => {
     const r = await assignRoleForm({ club_id: id, role_code: 'proxy', scope: 'club' }, { title: '대리인 지정 (제16조 제3항)' });
     if (r) { toast('배정했습니다.'); ctx.reload(); }
+  }));
+
+  on(el, 'click', '[data-edit-assign]', guard(async (_e, btn) => {
+    const a = clubAssigns.find((x) => x.id === btn.dataset.editAssign);
+    const r = await openForm({
+      title: `대표자 이력 수정 · ${a.member_name}`,
+      description: '기간이나 비고를 바로잡습니다. 수정 내용은 변경 이력에 남습니다. ※ 변경 전 반드시 회장단에게 연락 부탁드립니다.',
+      fields: [
+        { name: 'start_on', label: '시작일', type: 'date', value: a.start_on, required: true },
+        { name: 'end_on', label: '종료일', type: 'date', value: a.end_on, help: '비워 두면 현직입니다.' },
+        { name: 'note', label: '비고', value: a.note },
+      ],
+      onSubmit: (v) => qMut(sb.from('role_assignments').update({ start_on: v.start_on, end_on: v.end_on ?? null, note: v.note ?? null }).eq('id', a.id)),
+    });
+    if (r) { invalidate(); toast('저장했습니다.'); ctx.reload(); }
+  }));
+
+  on(el, 'click', '[data-del-assign]', guard(async (_e, btn) => {
+    const a = clubAssigns.find((x) => x.id === btn.dataset.delAssign);
+    const ok = await confirmDialog(
+      `${a.member_name}의 ${a.role_name} 기록(${fmtPeriod(a.start_on, a.end_on)})을 삭제합니다. 대표자가 바뀐 경우에는 삭제하지 말고 '대표자 교체'를 쓰세요. 삭제 내역은 변경 이력에 남습니다.`,
+      { title: '이력 삭제', confirmLabel: '삭제', danger: true },
+    );
+    if (!ok) return;
+    await qMut(sb.from('role_assignments').delete().eq('id', a.id));
+    invalidate();
+    toast('삭제했습니다.');
+    ctx.reload();
   }));
 
   on(el, 'click', '[data-end]', guard(async (_e, btn) => {
