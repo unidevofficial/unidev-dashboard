@@ -140,13 +140,14 @@ export async function render(el, _params, ctx) {
       fields: [
         ...(options ? [{ name: 'target', label: kind === 'staff' ? '구성원' : '동아리', type: 'pick', options, required: true }] : []),
         { name: 'username', label: '아이디', required: true, placeholder: kind === 'staff' ? '예: hong.gildong' : '예: catdog',
-          help: '영문 소문자·숫자로 시작하는 3~32자. 영문 소문자·숫자·마침표·밑줄·하이픈 사용 가능' },
+          help: '이메일이 아니라 로그인 아이디입니다. 영문 소문자·숫자로 시작하는 3~32자 (영문 소문자·숫자·마침표·밑줄·하이픈). 연락용 이메일은 구성원 정보에 따로 적습니다.' },
         { name: 'password', label: '임시 비밀번호', value: password, required: true, help: `${MIN_PASSWORD}자 이상. 자동으로 만든 값을 그대로 써도 됩니다.` },
       ],
       submitLabel: '만들기',
       onSubmit: async (v) => {
         const username = v.username.toLowerCase();
-        if (!USERNAME_RE.test(username)) throw new Error('아이디 형식이 맞지 않습니다. (영문 소문자·숫자로 시작, 3~32자)');
+        if (username.includes('@')) throw new Error(`이메일이 아니라 아이디를 넣어 주세요. 예: '${username.split('@')[0]}'`);
+        if (!USERNAME_RE.test(username)) throw new Error('아이디 형식이 맞지 않습니다. 영문 소문자·숫자로 시작하는 3~32자이고, 영문 소문자·숫자·마침표·밑줄·하이픈만 쓸 수 있습니다.');
         if (v.password.length < MIN_PASSWORD) throw new Error(`비밀번호는 ${MIN_PASSWORD}자 이상이어야 합니다.`);
         await adminAccounts({
           action: 'create', kind, username, password: v.password,
