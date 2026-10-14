@@ -55,6 +55,7 @@ UNIDEV(전국대학생게임개발동아리연합회) 내부 정보 관리용 �
 |---|---|---|
 | 운영진 계정 (`kind='staff'`) | 회장·부회장·팀장·운영진 | 개인. 구성원(`members`) 1명에 연결 |
 | 대표자 계정 (`kind='club'`) | 가입 동아리 | 동아리. 동아리(`clubs`) 1개에 연결하고, 그 동아리의 현직 대표자가 관리한다. 대표자가 바뀌어도 계정은 동아리에 남고, 관리자가 비밀번호를 재설정해 새 대표자에게 넘긴다 |
+| 관리자 계정 (`kind='admin'`) | 연합회 공용 관리 | 구성원·동아리에 연결하지 않는다. 모든 권한을 가지며 구성원 목록·조직도·연락망·출석부 어디에도 나타나지 않는다. 관리자 계정의 생성·재설정·삭제는 관리자 계정만 한다 |
 
 - 공개 가입은 없다. 계정 생성·비밀번호 재설정·삭제는 관리자만 한다 (`service_role` 키가 필요하므로 Supabase Edge Function `admin-accounts`로 처리).
 - 각자 로그인한 뒤 자기 비밀번호를 바꿀 수 있다.
@@ -62,7 +63,7 @@ UNIDEV(전국대학생게임개발동아리연합회) 내부 정보 관리용 �
 
 ### 권한 등급
 
-- **관리자**: 운영진 계정으로 로그인했고, 연결된 구성원이 `is_admin` 역할(회장·부회장·팀장)을 현재 맡고 있음
+- **관리자**: 관리자 계정, 또는 운영진 계정으로 로그인했고 연결된 구성원이 `is_admin` 역할(회장·부회장·팀장)을 현재 맡고 있음
 - **운영진**: 운영진 계정으로 로그인했고, 연결된 구성원이 현재 역할을 하나 이상 맡고 있음
 - **대표자**: 대표자 계정으로 로그인했고, 연결된 동아리가 정등록·가등록 상태임. 운영진과 같은 열람 권한에 더해 자기 동아리 정보·동아리 회장단·현직 대표자 연락처를 수정할 수 있음
 - 현재 역할이 없는 운영진 계정, 심사 중·비활성 동아리의 대표자 계정은 로그인하더라도 아무것도 볼 수 없다.
@@ -224,7 +225,7 @@ create table sanctions (
 create table accounts (
   auth_user_id        uuid primary key references auth.users(id) on delete cascade,
   username            text not null unique,   -- 로그인 아이디 (영문 소문자·숫자·._-)
-  kind                text not null check (kind in ('staff','club')),
+  kind                text not null check (kind in ('staff','club','admin')),
   member_id           uuid unique references members(id) on delete cascade,  -- kind='staff'
   club_id             uuid unique references clubs(id) on delete cascade,    -- kind='club'
   password_changed_at timestamptz,
@@ -243,6 +244,7 @@ create table change_logs (
   after_data      jsonb,
   actor_member_id uuid,          -- 운영진 계정으로 처리한 경우
   actor_club_id   uuid,          -- 대표자(동아리) 계정으로 처리한 경우
+  actor_username  text,          -- 처리한 계정의 아이디 (관리자 계정 구분용)
   created_at      timestamptz not null default now()
 );
 ```

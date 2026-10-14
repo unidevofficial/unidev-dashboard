@@ -63,8 +63,8 @@ function matchRoute(path) {
 
 function renderShell() {
   const a = ctx.access;
-  const roles = a.kind === 'club' ? ['대표자 계정'] : [...new Set((a.roles || []).map((r) => r.name))];
-  const myPage = a.kind === 'club' ? `#/clubs/${a.club_id}` : `#/members/${a.member_id}`;
+  const roles = a.kind === 'club' ? ['대표자 계정'] : a.kind === 'admin' ? ['관리자 계정'] : [...new Set((a.roles || []).map((r) => r.name))];
+  const myPage = a.kind === 'club' ? `#/clubs/${a.club_id}` : a.kind === 'admin' ? '#/accounts' : `#/members/${a.member_id}`;
   setHtml(app, html`
     <div class="shell">
       <aside class="sidebar">
@@ -75,7 +75,7 @@ function renderShell() {
         <div class="sidebar-foot">
           ${isLocal ? html`<div class="env-badge">로컬 개발 DB</div>` : ''}
           <div class="me-name"><a href="${myPage}">${a.name}</a> <span class="muted small">${a.username}</span></div>
-          <div class="me-roles">${roles.join(' · ')}${a.is_admin ? ' (관리자)' : ''}</div>
+          <div class="me-roles">${roles.join(' · ')}${a.is_admin && a.kind !== 'admin' ? ' (관리자)' : ''}</div>
           <div class="row"><button class="btn sm" data-password>비밀번호 변경</button><button class="btn sm ghost" data-logout>로그아웃</button></div>
         </div>
       </aside>

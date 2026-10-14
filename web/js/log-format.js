@@ -23,10 +23,11 @@ export function logRecordLabel(log, names = {}) {
 
 export const actionBadge = (a) => badge(a, LOG_ACTION[a] ?? a);
 
-// 처리자: 운영진 계정이면 이름, 대표자(동아리) 계정이면 동아리 이름, 둘 다 없으면 시스템(직접 SQL 등)
+// 처리자: 운영진 계정이면 이름, 대표자(동아리) 계정이면 동아리 이름, 관리자 계정이면 아이디, 모두 없으면 시스템(직접 SQL 등)
 export function actorLabel(log, names = {}) {
   if (log.actor_member_id) return names.members?.[log.actor_member_id] ?? '(알 수 없음)';
   if (log.actor_club_id) return `${names.clubs?.[log.actor_club_id] ?? '(알 수 없음)'} 대표자 계정`;
+  if (log.actor_username) return `${log.actor_username} (관리자 계정)`;
   return '시스템';
 }
 export const tableLabel = (t) => TABLE_LABEL[t] ?? t;

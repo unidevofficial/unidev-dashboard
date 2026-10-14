@@ -375,6 +375,40 @@ begin
 end $$;
 
 -- =====================================================================
+-- 관리자 계정 (구성원·동아리 연결 없음): 전체 권한, 일반 관리자는 관리자 계정을 다룰 수 없다
+-- =====================================================================
+set local request.jwt.claim.sub = '00000000-0000-0000-0000-000000000008';
+do $$
+begin
+  assert public.is_admin() and public.is_staff() and public.is_super_admin(), 'FAIL: 관리자 계정 권한';
+  assert (select count(*) from public.members) >= 21, 'FAIL: 관리자 계정 members 열람';
+  assert (select count(*) from public.change_logs) > 0, 'FAIL: 관리자 계정 변경 이력 열람';
+  assert (public.get_my_access() ->> 'kind') = 'admin', 'FAIL: get_my_access kind';
+  update public.clubs set note = '관리자 계정 수정' where id = 'c0000000-0000-0000-0000-000000000002';
+  assert exists (select 1 from public.change_logs where table_name = 'clubs' and actor_username = 'admin'
+                    and actor_member_id is null and actor_club_id is null), 'FAIL: 관리자 계정 처리자 기록';
+  raise notice 'PASS 관리자 계정: 전체 권한, 처리자 아이디 기록';
+end $$;
+
+set local request.jwt.claim.sub = '00000000-0000-0000-0000-000000000003';
+do $$
+begin
+  assert not public.can_manage_account('00000000-0000-0000-0000-000000000008'), 'FAIL: 팀장이 관리자 계정을 관리';
+  assert public.can_manage_account('00000000-0000-0000-0000-000000000004'), 'FAIL: 팀장이 대표자 계정을 관리 못함';
+  begin
+    perform public.admin_remove_account('00000000-0000-0000-0000-000000000008');
+    raise exception 'FAIL: 팀장이 관리자 계정을 삭제';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.admin_register_account(gen_random_uuid(), 'admin2', 'admin');
+    raise exception 'FAIL: 팀장이 관리자 계정을 만듦';
+  exception when insufficient_privilege then null;
+  end;
+  raise notice 'PASS 관리자 계정은 관리자 계정만 관리';
+end $$;
+
+-- =====================================================================
 -- 계정 관리: 관리자만 accounts 행을 만들고 지울 수 있고, 처리자가 이력에 남는다
 -- =====================================================================
 reset role;

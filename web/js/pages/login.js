@@ -58,7 +58,7 @@ export async function render(el, _params, { onSignedIn }) {
       ? html`${accounts.map((a) => html`
           <button class="btn dev-user" data-username="${a.username}">
             <span>${a.label} <span class="r">${a.username}</span></span>
-            <span class="r">${a.kind === 'club' ? '대표자 계정' : '운영진 계정'}</span>
+            <span class="r">${{ club: '대표자 계정', admin: '관리자 계정' }[a.kind] ?? '운영진 계정'}</span>
           </button>`)}`
       : html`<div class="muted small">계정이 없습니다. npm run db:reset 으로 데이터를 넣으세요.</div>`);
     on(box, 'click', '[data-username]', async (_e, t) => {

@@ -367,6 +367,7 @@ for i, m in enumerate(staff_members, start=1):
     dev_accounts.append((make_username((m['email'] or '').split('@')[0], f'staff-{i}'), 'staff', m['id'], None, m['name']))
 for i, c in enumerate(clubs.values(), start=1):
     dev_accounts.append((make_username(c['name'], f'club-{i}'), 'club', None, c['id'], c['name']))
+dev_accounts.append((make_username('admin', 'admin-1'), 'admin', None, None, '관리자'))
 
 D = ['-- 로컬 전용 (Supabase에 적용하지 않음): 개발용 로그인 계정. 비밀번호는 .env의 DEV_ACCOUNT_PASSWORD',
      '-- Supabase에서는 관리자가 로그인 계정 화면에서 계정을 만든다.',

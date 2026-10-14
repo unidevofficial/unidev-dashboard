@@ -159,6 +159,7 @@ export function createLocalAuth(env, { pgrstUrl }) {
       }
       if (action === 'reset_password') {
         if (String(body.password || '').length < MIN_PASSWORD) return fail(400, `비밀번호는 ${MIN_PASSWORD}자 이상이어야 합니다.`);
+        if (!(await rpc('can_manage_account', { p_auth_user_id: body.auth_user_id }, token))) return fail(403, '이 계정의 비밀번호를 재설정할 권한이 없습니다.');
         const ok = sql(`update auth.users set encrypted_password = crypt(:'password', gen_salt('bf')), updated_at = now()
                          where id = :'id'::uuid returning to_json(true)`, { id: body.auth_user_id, password: body.password });
         if (!ok) return fail(404, '계정을 찾을 수 없습니다.');
@@ -183,7 +184,7 @@ export function createLocalAuth(env, { pgrstUrl }) {
     const r = await fetch(`${pgrstUrl}/accounts?select=auth_user_id,username,kind,member_id,club_id,members(name),clubs(name)&order=kind.desc,username`,
       { headers: { authorization: `Bearer ${serviceToken()}` } });
     if (!r.ok) throw new Error(await r.text());
-    return (await r.json()).map((a) => ({ username: a.username, kind: a.kind, label: a.members?.name ?? a.clubs?.name ?? '' }));
+    return (await r.json()).map((a) => ({ username: a.username, kind: a.kind, label: a.members?.name ?? a.clubs?.name ?? (a.kind === 'admin' ? '관리자' : '') }));
   }
 
   function devQuickLogin(username) {

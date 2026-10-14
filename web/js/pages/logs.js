@@ -23,7 +23,7 @@ export async function render(el, _params, ctx) {
         <select data-f="table"><option value="">모든 대상</option>${Object.entries(TABLE_LABEL).map(([k, v]) => html`<option value="${k}">${v}</option>`)}</select>
         <select data-f="action"><option value="">모든 작업</option>${Object.entries(LOG_ACTION).map(([k, v]) => html`<option value="${k}">${v}</option>`)}</select>
         <label class="row small">기간 <input type="date" data-f="from"> ~ <input type="date" data-f="to"></label>
-        <select data-f="actor"><option value="">모든 처리자</option><option value="system">시스템(직접 SQL 등)</option>
+        <select data-f="actor"><option value="">모든 처리자</option><option value="system">시스템(직접 SQL 등)</option><option value="admin">관리자 계정</option>
           <optgroup label="운영진">${sortKo(members, (m) => m.name).map((m) => html`<option value="${m.id}">${m.name}</option>`)}</optgroup>
           <optgroup label="대표자 계정">${clubs.map((c) => html`<option value="club:${c.id}">${c.name}</option>`)}</optgroup></select>
       </div>
@@ -39,7 +39,8 @@ export async function render(el, _params, ctx) {
     if (state.action) qb = qb.eq('action', state.action);
     if (state.from) qb = qb.gte('created_at', new Date(`${state.from}T00:00:00`).toISOString());
     if (state.to) qb = qb.lt('created_at', new Date(`${addDays(state.to, 1)}T00:00:00`).toISOString());
-    if (state.actor === 'system') qb = qb.is('actor_member_id', null).is('actor_club_id', null);
+    if (state.actor === 'system') qb = qb.is('actor_member_id', null).is('actor_club_id', null).is('actor_username', null);
+    else if (state.actor === 'admin') qb = qb.is('actor_member_id', null).is('actor_club_id', null).not('actor_username', 'is', null);
     else if (state.actor.startsWith('club:')) qb = qb.eq('actor_club_id', state.actor.slice(5));
     else if (state.actor) qb = qb.eq('actor_member_id', state.actor);
     const rows = await q(qb.range(state.rows.length, state.rows.length + PAGE - 1));
@@ -67,7 +68,7 @@ export async function render(el, _params, ctx) {
             <td>${tableLabel(l.table_name)}</td>
             <td>${actionBadge(l.action)}</td>
             <td class="wrap">${recordLink(l)}</td>
-            <td>${l.actor_member_id || l.actor_club_id ? actorLabel(l, names) : html`<span class="muted">시스템</span>`}</td>
+            <td>${l.actor_member_id || l.actor_club_id || l.actor_username ? actorLabel(l, names) : html`<span class="muted">시스템</span>`}</td>
             <td><button class="btn xs ghost" data-toggle="${l.id}">${state.open.has(l.id) ? '접기' : '상세'}</button></td>
           </tr>
           ${state.open.has(l.id) ? html`<tr class="log-detail"><td colspan="6">${diffTable(l)}</td></tr>` : ''}`)}

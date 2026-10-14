@@ -46,6 +46,8 @@ export async function render(el, _params, ctx) {
 
   const staffAccounts = sortKo(accounts.filter((a) => a.kind === 'staff'), (a) => memberById[a.member_id]?.name);
   const clubAccounts = sortClubs(accounts.filter((a) => a.kind === 'club'), (a) => clubById[a.club_id]?.name);
+  const adminAccounts_ = accounts.filter((a) => a.kind === 'admin');
+  const isSuper = ctx.access.kind === 'admin'; // 관리자 계정은 관리자 계정만 관리한다
   const hasAccount = new Set(accounts.map((a) => a.member_id ?? a.club_id));
   // 운영진 계정 대상: 대표자·대리인 외의 현직 역할이 있는 사람
   const staffIds = [...new Set(assigns.filter((a) => !CLUB_ROLES.has(a.role_code)).map((a) => a.member_id))];
@@ -55,15 +57,18 @@ export async function render(el, _params, ctx) {
   const accountRow = (a) => {
     const target = a.kind === 'staff'
       ? html`<a href="#/members/${a.member_id}">${memberById[a.member_id]?.name ?? '(알 수 없음)'}</a> <span class="muted small">${staffRoleLabel(a.member_id) || '현직 역할 없음'}</span>`
-      : html`<a href="#/clubs/${a.club_id}">${clubLabel(clubById[a.club_id])}</a> ${clubById[a.club_id] ? statusBadge(clubById[a.club_id].status) : ''}`;
+      : a.kind === 'club'
+        ? html`<a href="#/clubs/${a.club_id}">${clubLabel(clubById[a.club_id])}</a> ${clubById[a.club_id] ? statusBadge(clubById[a.club_id].status) : ''}`
+        : html`<span class="muted">전체 권한 · 구성원 정보에 나타나지 않음</span>`;
+    const manageable = a.kind !== 'admin' || isSuper;
     return html`<tr>
       <td class="mono"><strong>${a.username}</strong></td>
       <td class="wrap">${target}</td>
       <td class="small muted">${fmtDateTime(a.password_changed_at) || '-'}</td>
       <td class="small muted">${fmtDateTime(a.created_at)}</td>
-      <td class="row" style="flex-wrap:nowrap">
+      <td class="row" style="flex-wrap:nowrap">${manageable ? html`
         <button class="btn xs" data-reset="${a.auth_user_id}">비밀번호 재설정</button>
-        <button class="btn xs ghost" data-delete="${a.auth_user_id}">삭제</button>
+        ${a.auth_user_id === ctx.access.auth_user_id ? '' : html`<button class="btn xs ghost" data-delete="${a.auth_user_id}">삭제</button>`}` : ''}
       </td>
     </tr>`;
   };
@@ -75,6 +80,7 @@ export async function render(el, _params, ctx) {
     <div class="page-head">
       <div><h1>로그인 계정</h1><div class="sub">운영진 개인 계정 ${staffAccounts.length}개 · 대표자(동아리) 계정 ${clubAccounts.length}개</div></div>
       <div class="page-actions">
+        ${isSuper ? html`<button class="btn" data-create="admin">관리자 계정 만들기</button>` : ''}
         <button class="btn" data-create="club">대표자 계정 만들기</button>
         <button class="btn primary" data-create="staff">운영진 계정 만들기</button>
       </div>
@@ -93,11 +99,15 @@ export async function render(el, _params, ctx) {
     <div class="card" style="margin-top:16px">
       <div class="card-head"><h2>대표자 계정</h2><span class="hint">동아리 소유 · 현직 대표자가 관리. 대표자가 바뀌면 비밀번호를 재설정해 넘깁니다</span></div>
       <div class="card-body flush table-wrap">${table(clubAccounts, '대표자 계정이 없습니다.')}</div>
-    </div>`);
+    </div>
+    ${adminAccounts_.length ? html`<div class="card" style="margin-top:16px">
+      <div class="card-head"><h2>관리자 계정</h2><span class="hint">구성원·동아리에 연결되지 않은 전체 권한 계정 · 관리자 계정만 관리할 수 있습니다</span></div>
+      <div class="card-body flush table-wrap">${table(adminAccounts_, '')}</div>
+    </div>` : ''}`);
 
   const guard = (fn) => async (...args) => { try { await fn(...args); } catch (e) { showError(e); } };
   const byId = Object.fromEntries(accounts.map((a) => [a.auth_user_id, a]));
-  const accountName = (a) => (a.kind === 'staff' ? memberById[a.member_id]?.name : clubById[a.club_id]?.name) ?? a.username;
+  const accountName = (a) => (a.kind === 'staff' ? memberById[a.member_id]?.name : a.kind === 'club' ? clubById[a.club_id]?.name : '관리자') ?? a.username;
 
   // 만든 뒤 아이디·비밀번호를 한 번 보여 준다 (전달용)
   async function showCredentials(title, username, password) {
@@ -114,17 +124,21 @@ export async function render(el, _params, ctx) {
     const kind = b.dataset.create;
     const options = kind === 'staff'
       ? staffWithout.map((m) => ({ value: m.id, label: `${m.name} · ${staffRoleLabel(m.id)}` }))
-      : clubsWithout.map((c) => ({ value: c.id, label: `${c.name}${c.status === 'pending' ? ' (심사 중)' : ''}` }));
-    if (!options.length) return toast(kind === 'staff' ? '계정이 없는 운영진이 없습니다.' : '계정이 없는 동아리가 없습니다.');
+      : kind === 'club'
+        ? clubsWithout.map((c) => ({ value: c.id, label: `${c.name}${c.status === 'pending' ? ' (심사 중)' : ''}` }))
+        : null;
+    if (options && !options.length) return toast(kind === 'staff' ? '계정이 없는 운영진이 없습니다.' : '계정이 없는 동아리가 없습니다.');
     const password = tempPassword();
     let created;
     const r = await openForm({
-      title: kind === 'staff' ? '운영진 계정 만들기' : '대표자(동아리) 계정 만들기',
-      description: kind === 'staff'
-        ? '개인 계정입니다. 대표자·대리인 외의 현직 역할이 있는 구성원만 고를 수 있습니다.'
-        : '동아리 소유 계정입니다. 현직 대표자에게 아이디·비밀번호를 전달합니다.',
+      title: { staff: '운영진 계정 만들기', club: '대표자(동아리) 계정 만들기', admin: '관리자 계정 만들기' }[kind],
+      description: {
+        staff: '개인 계정입니다. 대표자·대리인 외의 현직 역할이 있는 구성원만 고를 수 있습니다.',
+        club: '동아리 소유 계정입니다. 현직 대표자에게 아이디·비밀번호를 전달합니다.',
+        admin: '구성원·동아리에 연결되지 않는 전체 권한 계정입니다. 구성원 목록·조직도 등 어디에도 나타나지 않습니다.',
+      }[kind],
       fields: [
-        { name: 'target', label: kind === 'staff' ? '구성원' : '동아리', type: 'pick', options, required: true },
+        ...(options ? [{ name: 'target', label: kind === 'staff' ? '구성원' : '동아리', type: 'pick', options, required: true }] : []),
         { name: 'username', label: '아이디', required: true, placeholder: kind === 'staff' ? '예: hong.gildong' : '예: catdog',
           help: '영문 소문자·숫자로 시작하는 3~32자. 영문 소문자·숫자·마침표·밑줄·하이픈 사용 가능' },
         { name: 'password', label: '임시 비밀번호', value: password, required: true, help: `${MIN_PASSWORD}자 이상. 자동으로 만든 값을 그대로 써도 됩니다.` },

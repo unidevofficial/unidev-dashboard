@@ -1,5 +1,5 @@
 // Supabase Edge Function: 로그인 계정 관리 (관리자 전용)
-//   POST { action: 'create', kind: 'staff'|'club', username, password, member_id?, club_id? } → { auth_user_id }
+//   POST { action: 'create', kind: 'staff'|'club'|'admin', username, password, member_id?, club_id? } → { auth_user_id }
 //   POST { action: 'reset_password', auth_user_id, password }                              → { ok }
 //   POST { action: 'delete', auth_user_id }                                                → { ok }
 //
@@ -88,6 +88,8 @@ Deno.serve(async (req) => {
       case 'reset_password': {
         if (password.length < MIN_PASSWORD) return json(400, { error: `비밀번호는 ${MIN_PASSWORD}자 이상이어야 합니다.` });
         const id = String(body.auth_user_id ?? '');
+        const { data: canManage } = await userClient.rpc('can_manage_account', { p_auth_user_id: id });
+        if (!canManage) return json(403, { error: '이 계정의 비밀번호를 재설정할 권한이 없습니다.' });
         const { error } = await admin.auth.admin.updateUserById(id, { password });
         if (error) return json(400, { error: error.message });
         await userClient.rpc('mark_password_changed', { p_auth_user_id: id });

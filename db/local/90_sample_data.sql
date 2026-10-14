@@ -10,6 +10,7 @@
 --   yerin       ...0005 운영진 계정  신예린 행사팀원 (운영진)
 --   haeun       ...0006 운영진 계정  류하은 현직 역할 없음 (아무것도 볼 수 없어야 함)
 --   bughunters  ...0007 대표자 계정  버그헌터즈 (심사 중이라 아무것도 볼 수 없어야 함)
+--   admin       ...0008 관리자 계정  (구성원·동아리 연결 없음, 전체 권한)
 -- =====================================================================
 
 -- 동아리
@@ -55,7 +56,8 @@ insert into auth.users (id, email, encrypted_password) values
   ('00000000-0000-0000-0000-000000000004', 'pixellab@'   || :'login_domain', crypt(:'dev_password', gen_salt('bf'))),
   ('00000000-0000-0000-0000-000000000005', 'yerin@'      || :'login_domain', crypt(:'dev_password', gen_salt('bf'))),
   ('00000000-0000-0000-0000-000000000006', 'haeun@'      || :'login_domain', crypt(:'dev_password', gen_salt('bf'))),
-  ('00000000-0000-0000-0000-000000000007', 'bughunters@' || :'login_domain', crypt(:'dev_password', gen_salt('bf')));
+  ('00000000-0000-0000-0000-000000000007', 'bughunters@' || :'login_domain', crypt(:'dev_password', gen_salt('bf'))),
+  ('00000000-0000-0000-0000-000000000008', 'admin@'      || :'login_domain', crypt(:'dev_password', gen_salt('bf')));
 
 insert into public.accounts (auth_user_id, username, kind, member_id, club_id) values
   ('00000000-0000-0000-0000-000000000001', 'haneul',     'staff', 'b0000000-0000-0000-0000-000000000001', null),
@@ -64,7 +66,8 @@ insert into public.accounts (auth_user_id, username, kind, member_id, club_id) v
   ('00000000-0000-0000-0000-000000000004', 'pixellab',   'club',  null, 'c0000000-0000-0000-0000-000000000001'),
   ('00000000-0000-0000-0000-000000000005', 'yerin',      'staff', 'b0000000-0000-0000-0000-000000000012', null),
   ('00000000-0000-0000-0000-000000000006', 'haeun',      'staff', 'b0000000-0000-0000-0000-000000000019', null),
-  ('00000000-0000-0000-0000-000000000007', 'bughunters', 'club',  null, 'c0000000-0000-0000-0000-000000000006');
+  ('00000000-0000-0000-0000-000000000007', 'bughunters', 'club',  null, 'c0000000-0000-0000-0000-000000000006'),
+  ('00000000-0000-0000-0000-000000000008', 'admin',      'admin', null, null);
 
 -- 역할 배정
 with r as (select id, code from public.roles),
