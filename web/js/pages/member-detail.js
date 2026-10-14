@@ -89,7 +89,7 @@ export async function render(el, { id }, ctx) {
   const guard = (fn) => async (...args) => { try { await fn(...args); } catch (e) { showError(e); } };
 
   on(el, 'click', '[data-edit]', guard(async () => {
-    if (await editMemberForm(member, { admin: ctx.isAdmin })) { toast('저장했습니다.'); ctx.reload(); }
+    if (await editMemberForm(member, { admin: ctx.isAdmin, clubRep: isMyClubRep && !ctx.isAdmin })) { toast('저장했습니다.'); ctx.reload(); }
   }));
   on(el, 'click', '[data-verify]', guard(async () => {
     await qMut(sb.from('members').update({ contact_verified_on: today() }).eq('id', id));

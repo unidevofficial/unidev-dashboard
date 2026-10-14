@@ -182,9 +182,9 @@ export async function render(el, { id }, ctx) {
     const memberOpts = await memberPickOptions();
     const result = await openForm({
       title: club.representative_id ? '대표자 교체' : '대표자 지정',
-      description: club.representative_id
+      description: (club.representative_id
         ? `현 대표자 ${club.representative_name}의 배정은 시작일 전날로 종료되고, 새 대표자 배정이 추가됩니다.`
-        : '새 대표자 배정을 추가합니다.',
+        : '새 대표자 배정을 추가합니다.') + ' ※ 변경 전 반드시 회장단에게 연락 부탁드립니다.',
       fields: [
         { name: 'mode', label: '새 대표자', type: 'select', required: true, value: 'existing',
           options: [{ value: 'existing', label: '등록된 구성원 중에서 선택' }, { value: 'new', label: '새 구성원으로 등록' }] },
