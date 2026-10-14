@@ -121,8 +121,12 @@ h3 { font-size: 14px; font-weight: 650; }
     transform: translateX(-100%); transition: transform .2s; box-shadow: var(--shadow-lg);
   }
   .shell.nav-open .sidebar { transform: none; }
-  .nav-backdrop { position: fixed; inset: 0; z-index: 35; background: rgba(10, 14, 20, .45); display: none; }
+  .nav-backdrop { position: fixed; inset: 0; z-index: 35; background: rgba(10, 14, 20, .45); display: none; touch-action: none; }
   .shell.nav-open .nav-backdrop { display: block; }
+  /* 메뉴가 열려 있는 동안 뒤쪽 페이지가 스크롤되지 않게 막는다.
+     페이지가 스크롤되면 모바일 주소창이 접히면서 메뉴가 손가락을 따라 딸려 올라가고 아래가 비어 보인다. */
+  html:has(.shell.nav-open), html:has(.shell.nav-open) body { overflow: hidden; }
+  .sidebar, .nav { overscroll-behavior: contain; }
   .topbar {
     display: flex; align-items: center; gap: 10px;
     padding: calc(10px + var(--safe-top)) calc(16px + var(--safe-right)) 10px calc(16px + var(--safe-left));
