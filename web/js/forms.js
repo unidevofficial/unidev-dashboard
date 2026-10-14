@@ -138,7 +138,7 @@ export async function editMemberForm(member, { admin, clubRep = false }) {
   return openForm({
     title: admin ? '구성원 정보 수정' : clubRep ? '대표자 정보 수정' : '내 정보 수정',
     description: admin ? null : clubRep
-      ? '현직 대표자의 이름과 연락처를 수정할 수 있습니다. ※ 대표자가 바뀌는 경우 여기서 이름을 바꾸지 말고, 변경 전 반드시 회장단에게 연락 부탁드립니다. 회장단이 대표자 교체를 처리합니다.'
+      ? '현직 대표자의 이름과 연락처를 수정할 수 있습니다. ※ 변경 전 반드시 회장단에게 연락 부탁드립니다.'
       : '이름과 연락처를 수정할 수 있습니다.',
     fields: await memberFields(member, { admin }),
     onSubmit: async (v) => {
