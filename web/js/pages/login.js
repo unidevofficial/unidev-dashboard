@@ -17,7 +17,7 @@ export async function render(el, _params, { onSignedIn }) {
       <div class="card login-card">
         <div class="brand"><div class="brand-mark">U</div><div><div class="brand-name">UNIDEV 대시보드</div><div class="brand-sub">전국대학생게임개발동아리연합회 내부 정보 관리</div></div></div>
         <form data-login autocomplete="on">
-          <label for="username" class="small muted">아이디</label>
+          <label for="username" class="small muted">아이디 (이메일로 만든 계정은 이메일)</label>
           <input id="username" name="username" required autocomplete="username" autocapitalize="none" spellcheck="false">
           <label for="password" class="small muted">비밀번호</label>
           <input id="password" name="password" type="password" required autocomplete="current-password">

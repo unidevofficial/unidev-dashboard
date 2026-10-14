@@ -15,7 +15,12 @@ export const sb = createClient(config.supabaseUrl, config.supabaseAnonKey, {
 
 export const USERNAME_RE = /^[a-z0-9][a-z0-9._-]{2,31}$/;
 export const MIN_PASSWORD = 8;
-const toEmail = (username) => `${username.trim().toLowerCase()}@${config.loginDomain}`;
+// 아이디 → Supabase Auth 이메일. '@'가 있으면 이메일로 보고 그대로 쓴다
+// (대시보드에서 직접 만든 첫 관리자 계정처럼 실제 이메일로 만든 사용자용)
+const toEmail = (username) => {
+  const u = username.trim().toLowerCase();
+  return u.includes('@') ? u : `${u}@${config.loginDomain}`;
+};
 
 // ---------------------------------------------------------------------
 // 로그인 (아이디·비밀번호)
