@@ -112,6 +112,8 @@ h3 { font-size: 14px; font-weight: 650; }
     transform: translateX(-100%); transition: transform .2s; box-shadow: var(--shadow-lg);
   }
   .shell.nav-open .sidebar { transform: none; }
+  .nav-backdrop { position: fixed; inset: 0; z-index: 35; background: rgba(10, 14, 20, .45); display: none; }
+  .shell.nav-open .nav-backdrop { display: block; }
   .topbar {
     display: flex; align-items: center; gap: 10px; padding: 10px 16px;
     background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 30;
@@ -127,8 +129,10 @@ h3 { font-size: 14px; font-weight: 650; }
 .card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--border); }
 .card-head .hint { font-size: 12px; color: var(--text-3); font-weight: 400; }
 .card-body { padding: 16px 18px; }
-.card-body.flush { padding: 0; }
+.card-body.flush { padding: 0; overflow-x: auto; }
+.card { min-width: 0; }
 .grid { display: grid; gap: 16px; }
+.grid > * { min-width: 0; }
 .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -299,3 +303,86 @@ dialog.modal::backdrop { background: rgba(10, 14, 20, .45); }
 .list-plain li:first-child { border-top: 0; }
 .denied { max-width: 520px; margin: 80px auto; text-align: center; }
 .denied p { color: var(--text-2); }
+
+/* =====================================================================
+   모바일 (폭 640px 이하)
+   - 표는 행마다 카드로 쌓고, 각 칸 앞에 열 이름(data-label, app.js가 채움)을 붙인다
+   - 툴바·버튼·대화상자는 화면 폭에 맞춘다
+   ===================================================================== */
+@media (max-width: 640px) {
+  body { font-size: 14px; }
+  h1 { font-size: 19px; }
+  .content { padding: 16px 12px 40px; }
+
+  .page-head { flex-direction: column; align-items: stretch; gap: 10px; margin-bottom: 14px; }
+  .page-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+  .page-actions .btn { width: 100%; }
+
+  .card-head { padding: 12px 14px; flex-wrap: wrap; }
+  .card-head .hint { flex-basis: 100%; }
+  .card-body { padding: 14px; }
+
+  /* 통계 카드는 두 개씩 */
+  .grid-2:has(> .stat) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .stat { padding: 12px 14px; }
+  .stat-value { font-size: 24px; }
+
+  /* 툴바: 검색창은 한 줄 전체, 구분 버튼은 가로로 밀어 보기 */
+  .toolbar { padding: 10px 12px; }
+  .toolbar input[type=search], .toolbar select { min-width: 0; max-width: none; flex: 1 1 100%; }
+  .toolbar .spacer { display: none; }
+  .segmented { max-width: 100%; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+  .segmented button { flex: none; }
+
+  /* 표 → 카드 */
+  .table thead { display: none; }
+  .table, .table tbody, .table tr, .table td { display: block; width: auto !important; }
+  .table tr { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  .table tbody tr:last-child { border-bottom: 0; }
+  .table td {
+    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+    padding: 3px 0; border: 0; white-space: normal; text-align: left; word-break: break-word;
+  }
+  .table td.num { text-align: left; }
+  .table td[data-label]:not([data-label=""])::before {
+    content: attr(data-label); flex: 0 0 76px; font-size: 12px; color: var(--text-3);
+  }
+  .table td:empty { display: none; }
+  /* 첫 칸(이름·동아리명 등)은 카드 제목처럼: 열 이름 없이 굵게 */
+  .table td:first-child { font-weight: 650; font-size: 15px; }
+  .table td:first-child::before { display: none; }
+  .table tr.clickable:hover td { background: none; }
+  .table tr.clickable:active { background: var(--surface-2); }
+  .table tr.group-row { padding: 6px 14px; background: var(--surface-2); }
+  .table tr.group-row td { padding: 0; background: none; }
+  .table tr.log-detail { padding: 0 14px 12px; }
+  .table td.row { justify-content: flex-start; }
+  .chips { flex: 1; }
+
+  dl.kv { grid-template-columns: 88px 1fr; gap: 6px 12px; }
+
+  /* 조직도 */
+  .org-top { gap: 10px; }
+  .person-card { min-width: 0; flex: 1 1 140px; padding: 10px 12px; }
+  .team-people li { flex-wrap: wrap; padding: 8px 14px; }
+
+  /* 대화상자: 거의 전체 화면 */
+  dialog.modal { width: calc(100vw - 16px); max-width: none; margin: auto; border-radius: 12px; }
+  .modal-head { padding: 16px 16px 0; }
+  .modal-body { padding: 14px 16px; max-height: calc(100dvh - 190px); }
+  .modal-foot { padding: 12px 16px 14px; }
+  .modal-foot .btn { flex: 1; }
+  .field-row { grid-template-columns: 1fr; }
+  input, select, textarea { font-size: 16px; } /* iOS에서 입력할 때 화면이 확대되지 않도록 */
+
+  /* 여러 행 입력(동아리 회장단): 한 행의 칸을 세로로 쌓는다 */
+  .rows-head { display: none; }
+  .rows-row { grid-template-columns: 1fr 28px; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+  .rows-row input { grid-column: 1; }
+  .rows-row [data-remove-row] { grid-column: 2; grid-row: 1; }
+
+  #toasts { left: 12px; right: 12px; bottom: 12px; }
+  .toast { max-width: none; }
+
+  .login-card { padding: 22px 18px; }
+}

@@ -41,6 +41,23 @@ const ROUTES = [
 ];
 
 const app = document.getElementById('app');
+
+// 모바일에서 표를 행마다 카드로 보여 줄 때, 각 칸 앞에 열 이름을 붙이기 위해 머리글을 data-label로 복사한다.
+// 화면이 다시 그려질 때마다(검색·필터 등) 새 표에도 적용한다.
+function labelTables(root) {
+  for (const table of root.querySelectorAll('table.table')) {
+    const heads = [...table.querySelectorAll('thead th')].map((th) => th.textContent.trim());
+    if (!heads.length) continue;
+    for (const tr of table.querySelectorAll('tbody tr')) {
+      let col = 0;
+      for (const td of tr.children) {
+        if (!td.hasAttribute('data-label')) td.setAttribute('data-label', heads[col] ?? '');
+        col += Number(td.getAttribute('colspan') || 1);
+      }
+    }
+  }
+}
+new MutationObserver(() => labelTables(app)).observe(app, { childList: true, subtree: true });
 let ctx = null;
 
 function currentPath() {
@@ -79,6 +96,7 @@ function renderShell() {
           <div class="row"><button class="btn sm" data-password>비밀번호 변경</button><button class="btn sm ghost" data-logout>로그아웃</button></div>
         </div>
       </aside>
+      <div class="nav-backdrop" data-backdrop></div>
       <div class="main">
         <div class="topbar"><button class="btn icon-btn ghost" data-menu aria-label="메뉴">${raw(icon('menu'))}</button><strong>UNIDEV</strong></div>
         <main class="content" id="page"></main>
@@ -92,6 +110,7 @@ function renderShell() {
   app.querySelector('[data-password]').addEventListener('click', changePassword);
   const shell = app.querySelector('.shell');
   app.querySelector('[data-menu]').addEventListener('click', () => shell.classList.toggle('nav-open'));
+  app.querySelector('[data-backdrop]').addEventListener('click', () => shell.classList.remove('nav-open'));
   app.querySelector('.nav').addEventListener('click', () => shell.classList.remove('nav-open'));
 }
 
