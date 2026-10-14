@@ -200,7 +200,7 @@ begin
   get diagnostics n = row_count;
   assert n = 1, 'FAIL: 대표자 계정이 자기 동아리 대표자 이력을 수정하지 못함';
 
-  -- 다른 동아리 대표자 이력·팀 배정·대리인 배정은 불가
+  -- 다른 동아리 대표자 이력·팀 배정·대표자 외 역할 배정은 불가
   update public.role_assignments set note = 'x' where club_id = 'c0000000-0000-0000-0000-000000000002';
   get diagnostics n = row_count;
   assert n = 0, 'FAIL: 다른 동아리 대표자 이력을 수정함';
@@ -208,9 +208,9 @@ begin
   get diagnostics n = row_count;
   assert n = 0, 'FAIL: 팀 배정을 수정함';
   begin
-    insert into public.role_assignments (member_id, role_id, club_id)
-    values ('b0000000-0000-0000-0000-000000000016', (select id from public.roles where code = 'proxy'), 'c0000000-0000-0000-0000-000000000001');
-    raise exception 'FAIL: 대표자 계정이 대리인을 배정함';
+    insert into public.role_assignments (member_id, role_id)
+    values ('b0000000-0000-0000-0000-000000000016', (select id from public.roles where code = 'staff'));
+    raise exception 'FAIL: 대표자 계정이 운영진 역할을 배정함';
   exception when insufficient_privilege then null;
   end;
 

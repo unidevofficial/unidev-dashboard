@@ -24,7 +24,7 @@ export async function render(el, _params, ctx) {
   };
 
   const countBy = (s) => clubs.filter((c) => c.status === s).length;
-  // 운영진: 동아리 범위 역할(대표자·대리인)만 있는 사람은 뺀다
+  // 운영진: 동아리 범위 역할(대표자)만 있는 사람은 뺀다
   const staffCount = new Set(assigns.filter((a) => a.role_scope !== 'club').map((a) => a.member_id)).size;
 
   setHtml(el, html`

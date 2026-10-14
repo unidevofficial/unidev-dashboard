@@ -7,7 +7,7 @@ import {
   openForm, confirmDialog, toast, showError, copyText,
 } from '../ui.js';
 
-const CLUB_ROLES = new Set(['representative', 'proxy']);
+const CLUB_ROLES = new Set(['representative']);
 
 // 읽기 쉬운 임시 비밀번호 (헷갈리는 글자 제외)
 function tempPassword() {
@@ -49,7 +49,7 @@ export async function render(el, _params, ctx) {
   const adminAccounts_ = accounts.filter((a) => a.kind === 'admin');
   const isSuper = ctx.access.kind === 'admin'; // 관리자 계정은 관리자 계정만 관리한다
   const hasAccount = new Set(accounts.map((a) => a.member_id ?? a.club_id));
-  // 운영진 계정 대상: 대표자·대리인 외의 현직 역할이 있는 사람
+  // 운영진 계정 대상: 대표자 외의 현직 역할이 있는 사람
   const staffIds = [...new Set(assigns.filter((a) => !CLUB_ROLES.has(a.role_code)).map((a) => a.member_id))];
   const staffWithout = sortKo(staffIds.filter((id) => !hasAccount.has(id)).map((id) => memberById[id]).filter(Boolean), (m) => m.name);
   const clubsWithout = clubs.filter((c) => c.status !== 'inactive' && !hasAccount.has(c.id));
@@ -66,7 +66,7 @@ export async function render(el, _params, ctx) {
       <td class="wrap">${target}</td>
       <td class="small muted">${fmtDateTime(a.password_changed_at) || '-'}</td>
       <td class="small muted">${fmtDateTime(a.created_at)}</td>
-      <td class="row" style="flex-wrap:nowrap">${manageable ? html`
+      <td class="actions">${manageable ? html`
         <button class="btn xs" data-reset="${a.auth_user_id}">비밀번호 재설정</button>
         ${a.auth_user_id === ctx.access.auth_user_id ? '' : html`<button class="btn xs ghost" data-delete="${a.auth_user_id}">삭제</button>`}` : ''}
       </td>
@@ -133,7 +133,7 @@ export async function render(el, _params, ctx) {
     const r = await openForm({
       title: { staff: '운영진 계정 만들기', club: '대표자(동아리) 계정 만들기', admin: '관리자 계정 만들기' }[kind],
       description: {
-        staff: '개인 계정입니다. 대표자·대리인 외의 현직 역할이 있는 구성원만 고를 수 있습니다.',
+        staff: '개인 계정입니다. 대표자 외의 현직 역할이 있는 구성원만 고를 수 있습니다.',
         club: '동아리 소유 계정입니다. 현직 대표자에게 아이디·비밀번호를 전달합니다.',
         admin: '구성원·동아리에 연결되지 않는 전체 권한 계정입니다. 구성원 목록·조직도 등 어디에도 나타나지 않습니다.',
       }[kind],

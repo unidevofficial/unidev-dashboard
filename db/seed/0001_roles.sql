@@ -6,7 +6,6 @@ insert into public.roles (code, name, scope, is_admin, sort_order) values
   ('vice_team_lead', '부팀장', 'team', false, 35),
   ('team_member',    '팀원',   'team', false, 40),
   ('representative', '대표자', 'club', false, 50),
-  ('proxy',          '대리인', 'club', false, 60),
   ('staff',          '운영진', 'org',  false, 70)
 on conflict (code) do update
   set name = excluded.name, scope = excluded.scope,

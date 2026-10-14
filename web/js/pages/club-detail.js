@@ -4,7 +4,7 @@ import {
   html, setHtml, on, statusBadge, badge, fmtDate, fmtPeriod, today, clubLabel, opts, sortKo,
   SANCTION_KIND, ATTENDANCE, MEETING_KIND, openForm, confirmDialog, toast, showError,
 } from '../ui.js';
-import { editClubForm, createMemberForm, memberPickOptions, assignRoleForm, endAssignmentForm } from '../forms.js';
+import { editClubForm, createMemberForm, memberPickOptions, endAssignmentForm } from '../forms.js';
 
 export async function render(el, { id }, ctx) {
   const [club] = await q(sb.from('v_club_overview').select('*').eq('id', id));
@@ -25,19 +25,18 @@ export async function render(el, { id }, ctx) {
     memberIds.length ? q(sb.from('v_current_assignments').select('*').in('member_id', memberIds)) : [],
     attendances.length ? q(sb.from('meetings').select('*').in('id', [...new Set(attendances.map((a) => a.meeting_id))])) : [],
   ]);
-  const proxyIds = attendances.map((a) => a.member_id).filter(Boolean);
+  const attendeeIds = attendances.map((a) => a.member_id).filter(Boolean);
   const repIds = clubAssigns.map((a) => a.member_id);
-  const contactIds = [...new Set([...repIds, ...proxyIds])];
+  const contactIds = [...new Set([...repIds, ...attendeeIds])];
   const contacts = contactIds.length ? await q(sb.from('members').select('id,name,phone,email,contact_purged_at').in('id', contactIds)) : [];
   const contactById = Object.fromEntries(contacts.map((m) => [m.id, m]));
   const meetingById = Object.fromEntries(meetings.map((m) => [m.id, m]));
 
   const canEdit = ctx.isAdmin || ctx.representsClub(id);
-  // 대표자 이력은 관리자와 이 동아리의 대표자 계정이 관리한다 (대리인 등 그 밖의 배정은 관리자만)
+  // 대표자 이력은 관리자와 이 동아리의 대표자 계정이 관리한다
+  //   (대리 참석자는 회의마다 출석부에 이름만 적으므로 동아리 정보로 다루지 않는다)
   const canManageReps = canEdit;
-  const canManageAssign = (a) => ctx.isAdmin || (ctx.representsClub(id) && a.role_code === 'representative');
   const reps = clubAssigns.filter((a) => a.role_code === 'representative');
-  const otherClubRoles = clubAssigns.filter((a) => a.role_code !== 'representative');
   const staffRows = sortKo(clubMembers.filter((m) => memberAssigns.some((a) => a.member_id === m.id)), (m) => m.name);
   const t = today();
 
@@ -82,15 +81,6 @@ export async function render(el, { id }, ctx) {
               <span class="badge ok">현직</span><span class="muted small">${fmtDate(club.representative_since)}부터</span></div>
             <div style="margin-top:6px">${contactCell(club.representative_id)}</div>`
           : html`<div class="notice">현직 대표자가 없습니다.</div>`}
-          ${otherClubRoles.filter((a) => a.is_current).length ? html`
-            <h3 style="margin-top:16px">대리인 등</h3>
-            <ul class="list-plain">${otherClubRoles.filter((a) => a.is_current).map((a) => html`
-              <li class="row"><a href="#/members/${a.member_id}">${a.member_name}</a> ${badge('info', a.role_name)}
-                <span class="muted small">${fmtPeriod(a.start_on, a.end_on)}</span>
-                <span class="spacer"></span>
-                ${ctx.isAdmin ? html`<button class="btn xs" data-end="${a.id}">종료</button>` : ''}
-              </li>`)}</ul>` : ''}
-          ${ctx.isAdmin ? html`<div style="margin-top:12px"><button class="btn sm" data-add-proxy>대리인 지정</button></div>` : ''}
 
           <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border)">
             <div class="row"><h3>동아리 회장단</h3><span class="muted small">동아리 자체 직책 · UNIDEV 역할과 별개</span></div>
@@ -107,19 +97,19 @@ export async function render(el, { id }, ctx) {
     </div>
 
     <div class="card" style="margin-top:16px">
-      <div class="card-head"><h2>대표자·대리인 이력</h2><span class="hint">역대 기록 포함</span></div>
+      <div class="card-head"><h2>대표자 이력</h2><span class="hint">역대 기록 포함</span></div>
       <div class="card-body flush table-wrap">
-        ${clubAssigns.length ? html`<table class="table">
+        ${reps.length ? html`<table class="table">
           <thead><tr><th>역할</th><th>이름</th><th>기간</th><th>연락처</th>${canManageReps ? html`<th></th>` : ''}</tr></thead>
-          <tbody>${clubAssigns.map((a) => html`<tr>
+          <tbody>${reps.map((a) => html`<tr>
             <td>${a.role_name} ${a.is_current ? badge('ok', '현직') : ''}</td>
             <td><a href="#/members/${a.member_id}">${a.member_name}</a></td>
             <td>${fmtPeriod(a.start_on, a.end_on)}</td>
             <td class="small">${contactCell(a.member_id)}</td>
-            ${canManageReps ? html`<td class="row" style="flex-wrap:nowrap">${canManageAssign(a) ? html`
+            ${canManageReps ? html`<td class="actions">
               ${a.is_current || (a.end_on ?? '9999') >= t ? html`<button class="btn xs" data-end="${a.id}">종료</button>` : ''}
-              ${a.role_code === 'representative' ? html`<button class="btn xs" data-edit-assign="${a.id}">수정</button>` : ''}
-              <button class="btn xs ghost" data-del-assign="${a.id}">삭제</button>` : ''}</td>` : ''}
+              <button class="btn xs" data-edit-assign="${a.id}">수정</button>
+              <button class="btn xs ghost" data-del-assign="${a.id}">삭제</button></td>` : ''}
           </tr>`)}</tbody></table>` : html`<div class="empty">기록이 없습니다.</div>`}
       </div>
     </div>
@@ -145,7 +135,7 @@ export async function render(el, { id }, ctx) {
         <div class="card-head"><h2>출결 이력</h2></div>
         <div class="card-body flush table-wrap">
           ${attendances.length ? html`<table class="table">
-            <thead><tr><th>회의</th><th>출결</th><th>참석 대표자·대리인</th><th>사유</th></tr></thead>
+            <thead><tr><th>회의</th><th>출결</th><th>참석자</th><th>사유</th></tr></thead>
             <tbody>${[...attendances].sort((a, b) => (meetingById[b.meeting_id]?.held_on ?? '').localeCompare(meetingById[a.meeting_id]?.held_on ?? '')).map((a) => {
               const mt = meetingById[a.meeting_id] ?? {};
               return html`<tr>
@@ -213,11 +203,6 @@ export async function render(el, { id }, ctx) {
     invalidate();
     toast('대표자를 반영했습니다.');
     ctx.reload();
-  }));
-
-  on(el, 'click', '[data-add-proxy]', guard(async () => {
-    const r = await assignRoleForm({ club_id: id, role_code: 'proxy', scope: 'club' }, { title: '대리인 지정 (제16조 제3항)' });
-    if (r) { toast('배정했습니다.'); ctx.reload(); }
   }));
 
   on(el, 'click', '[data-edit-assign]', guard(async (_e, btn) => {

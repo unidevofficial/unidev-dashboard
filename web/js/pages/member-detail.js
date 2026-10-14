@@ -79,7 +79,7 @@ export async function render(el, { id }, ctx) {
             <td>${a.team_name ?? (a.club_id ? html`<a href="#/clubs/${a.club_id}">${a.club_name}</a>` : '-')}</td>
             <td>${fmtPeriod(a.start_on, a.end_on)}</td>
             <td class="wrap small muted">${a.note ?? ''}</td>
-            ${ctx.isAdmin ? html`<td class="row" style="flex-wrap:nowrap">
+            ${ctx.isAdmin ? html`<td class="actions">
               ${!a.end_on || a.end_on >= t ? html`<button class="btn xs" data-end="${a.id}">종료</button>` : ''}
               <button class="btn xs ghost" data-del="${a.id}" title="잘못 입력한 기록 삭제">삭제</button></td>` : ''}
           </tr>`)}</tbody></table>` : html`<div class="empty">역할 기록이 없습니다.</div>`}

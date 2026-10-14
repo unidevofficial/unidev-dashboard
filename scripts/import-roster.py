@@ -346,9 +346,9 @@ OUT.parent.mkdir(parents=True, exist_ok=True)
 OUT.write_text('\n'.join(L) + '\n', encoding='utf-8')
 
 # 로컬 전용 개발용 로그인 계정
-#   운영진 계정: 대표자·대리인 외의 현직 역할이 있는 사람. 아이디는 이메일 앞부분(없거나 겹치면 staff-N)
+#   운영진 계정: 대표자 외의 현직 역할이 있는 사람. 아이디는 이메일 앞부분(없거나 겹치면 staff-N)
 #   대표자 계정: 동아리마다 1개. 아이디는 동아리 영문 이름(없으면 club-N)
-CLUB_ROLES = {'representative', 'proxy'}
+CLUB_ROLES = {'representative'}
 staff_members = sorted({a['member']['id']: a['member'] for a in assignments
                         if a['end'] is None and a['role'] not in CLUB_ROLES}.values(), key=lambda m: m['name'])
 used = set()

@@ -179,6 +179,7 @@ table.table { width: 100%; border-collapse: collapse; }
 .table tr.group-row td { background: var(--surface-2); font-size: 12px; font-weight: 650; color: var(--text-2); padding-top: 6px; padding-bottom: 6px; }
 .table tr.clickable:hover td { background: var(--surface-2); }
 .table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.table td.actions .btn + .btn { margin-left: 6px; } /* 버튼 칸: flex로 두면 행 높이를 따르지 않으므로 표 칸 그대로 둔다 */
 .table .muted { color: var(--text-3); }
 .empty { padding: 28px; text-align: center; color: var(--text-3); }
 
@@ -373,7 +374,8 @@ dialog.modal::backdrop { background: rgba(10, 14, 20, .45); }
   .table tr.group-row { padding: 6px 14px; background: var(--surface-2); }
   .table tr.group-row td { padding: 0; background: none; }
   .table tr.log-detail { padding: 0 14px 12px; }
-  .table td.row { justify-content: flex-start; }
+  .table td.actions { gap: 6px; }
+  .table td.actions .btn + .btn { margin-left: 0; }
   .chips { flex: 1; }
 
   dl.kv { grid-template-columns: 88px 1fr; gap: 6px 12px; }

@@ -53,7 +53,7 @@ export async function render(el, { id }, ctx) {
     <td>${statusCell(a)}</td>
     <td>${a.proxy_name || '-'}</td>
     <td class="wrap small">${a.reason ?? ''}</td>
-    ${ctx.isAdmin ? html`<td class="row" style="flex-wrap:nowrap">
+    ${ctx.isAdmin ? html`<td class="actions">
       <button class="btn xs" data-edit="${a.id}">대리인·사유</button>
       <button class="btn xs ghost" data-del="${a.id}" title="이 회의의 출결 대상에서 제외">제외</button></td>` : ''}`;
   const colCount = ctx.isAdmin ? 6 : 5;
