@@ -8,7 +8,7 @@
 // (DB에서도 is_admin()을 다시 확인하고, 변경 이력에 처리자가 남는다)
 //
 // 배포:  supabase functions deploy admin-accounts
-// 비밀값(선택): supabase secrets set LOGIN_DOMAIN=unidev.local ALLOWED_ORIGIN=https://<계정>.github.io
+// 비밀값(선택): supabase secrets set LOGIN_DOMAIN=unidev.local ALLOWED_ORIGIN=https://dashboard.unidev.kr
 //        (SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY는 Supabase가 자동으로 넣는다)
 //
 // 로컬 개발에서는 scripts/local-auth.mjs가 같은 계약으로 흉내 낸다. 둘을 함께 고칠 것.
@@ -19,7 +19,8 @@ const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 // web/config.js의 loginDomain과 같아야 한다. 비밀값을 설정하지 않으면 기본값을 쓴다.
 const LOGIN_DOMAIN = Deno.env.get('LOGIN_DOMAIN') ?? 'unidev.local';
-const ALLOWED_ORIGIN = Deno.env.get('ALLOWED_ORIGIN') ?? '*';
+// 대시보드 주소에서만 호출을 허용한다 (CORS). 비밀값으로 바꿀 수 있다.
+const ALLOWED_ORIGIN = Deno.env.get('ALLOWED_ORIGIN') ?? 'https://dashboard.unidev.kr';
 
 const USERNAME_RE = /^[a-z0-9][a-z0-9._-]{2,31}$/;
 const MIN_PASSWORD = 8;

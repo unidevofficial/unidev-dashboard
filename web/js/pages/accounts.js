@@ -16,21 +16,6 @@ function tempPassword() {
   return Array.from(buf, (n) => chars[n % chars.length]).join('');
 }
 
-// 아이디 제안: 영문 이름이면 그대로, 아니면 비워 둔다
-const suggestUsername = (text) => {
-  const u = String(text ?? '').toLowerCase().replace(/[^a-z0-9._-]/g, '').replace(/^[._-]+/, '');
-  return USERNAME_RE.test(u) ? u : '';
-};
-
-// 대표자 계정 만들기에서 동아리를 고르면, 영문 이름일 때 아이디 칸을 미리 채운다 (한 번만 등록)
-let currentClubById = {};
-document.addEventListener('change', (e) => {
-  const sel = e.target.closest?.('dialog select[name="target"]');
-  if (!sel) return;
-  const input = sel.form.elements.username;
-  if (input && !input.value) input.value = suggestUsername(currentClubById[sel.value]?.name);
-});
-
 export async function render(el, _params, ctx) {
   const [accounts, assigns, members, clubs] = await Promise.all([
     q(sb.from('accounts').select('*').order('username')),
@@ -163,8 +148,6 @@ export async function render(el, _params, ctx) {
     await showCredentials('계정을 만들었습니다', created.username, created.password);
     ctx.reload();
   }));
-
-  currentClubById = clubById;
 
   on(el, 'click', '[data-reset]', guard(async (_e, b) => {
     const a = byId[b.dataset.reset];

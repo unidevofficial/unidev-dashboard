@@ -87,7 +87,7 @@ rollback;
    supabase functions deploy admin-accounts
    ```
    ```bash
-   supabase secrets set LOGIN_DOMAIN=unidev.local ALLOWED_ORIGIN=https://<계정>.github.io
+   supabase secrets set LOGIN_DOMAIN=unidev.local ALLOWED_ORIGIN=https://dashboard.unidev.kr
    ```
 4. `web/config.js`의 `production`에 프로젝트 URL과 **anon key만** 넣고, `loginDomain`을 위 `LOGIN_DOMAIN`과 같게 둔다. `service_role` 키는 절대 넣지 않는다.
 5. 첫 관리자 계정 (SPEC 9절): Authentication → Users → Add user에서 이메일 `<아이디>@<LOGIN_DOMAIN>`, 비밀번호, Auto Confirm으로 사용자를 만든 뒤 SQL Editor에서 실행한다.
