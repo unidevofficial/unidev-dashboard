@@ -66,6 +66,7 @@ export async function render(el, { id }, ctx) {
         <div class="sub">${fmtDate(meeting.held_on)} · ${MEETING_KIND[meeting.kind]}${team ? ` · ${team.name}` : ''}</div></div>
       <div class="page-actions">${ctx.isAdmin ? html`
         <button class="btn" data-edit-meeting>회의 수정</button>
+        <button class="btn danger" data-delete-meeting>회의 삭제</button>
         ${byClub
           ? html`<button class="btn" data-fill>빠진 대상 추가</button>`
           : html`<button class="btn" data-fill>${meeting.kind === 'team' ? '팀원 일괄 추가' : '회장단·팀장 일괄 추가'}</button>
@@ -165,6 +166,18 @@ export async function render(el, { id }, ctx) {
       onSubmit: (v) => qMut(sb.from('meetings').update(v).eq('id', id)),
     });
     if (r) { toast('저장했습니다.'); ctx.reload(); }
+  }));
+
+  on(el, 'click', '[data-delete-meeting]', guard(async () => {
+    const name = `${fmtDate(meeting.held_on)} ${meeting.title || MEETING_KIND[meeting.kind]}`;
+    const ok = await confirmDialog(
+      `${name} 회의와 출결 기록 ${rows.length}건을 삭제합니다. 되돌릴 수 없습니다. 삭제 내역은 변경 이력에 남습니다.`,
+      { title: '회의 삭제', confirmLabel: '삭제', danger: true },
+    );
+    if (!ok) return;
+    await qMut(sb.from('meetings').delete().eq('id', id));
+    toast('회의를 삭제했습니다.');
+    location.hash = '#/meetings';
   }));
 
   // 대표자회의: 아직 행이 없는 정등록·가등록 동아리를 '결석'으로 추가 (회의 생성 뒤 등록된 동아리 등)
