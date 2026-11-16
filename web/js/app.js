@@ -36,6 +36,7 @@ const ROUTES = [
   { pattern: '/contacts', page: () => import('./pages/contacts.js') },
   { pattern: '/meetings', page: () => import('./pages/meetings.js') },
   { pattern: '/meetings/:id', page: () => import('./pages/meeting-detail.js') },
+  { pattern: '/roster-image', page: () => import('./pages/roster-image.js'), admin: true },
   { pattern: '/logs', page: () => import('./pages/logs.js'), admin: true },
   { pattern: '/accounts', page: () => import('./pages/accounts.js'), admin: true },
 ];

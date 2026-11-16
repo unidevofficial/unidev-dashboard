@@ -65,6 +65,7 @@ export async function render(el, { id }, ctx) {
       <div><h1>${meeting.title || MEETING_KIND[meeting.kind]}</h1>
         <div class="sub">${fmtDate(meeting.held_on)} · ${MEETING_KIND[meeting.kind]}${team ? ` · ${team.name}` : ''}</div></div>
       <div class="page-actions">${ctx.isAdmin ? html`
+        <a class="btn" href="#/roster-image?meeting=${meeting.id}">명단 이미지</a>
         <button class="btn" data-edit-meeting>회의 수정</button>
         <button class="btn danger" data-delete-meeting>회의 삭제</button>
         ${byClub

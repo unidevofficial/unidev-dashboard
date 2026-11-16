@@ -17,7 +17,7 @@ export async function render(el, _params, ctx) {
   setHtml(el, html`
     <div class="page-head">
       <div><h1>회의·출결</h1><div class="sub">대표자회의·운영진회의·팀 회의 출결 기록</div></div>
-      <div class="page-actions">${ctx.isAdmin ? html`<button class="btn primary" data-create>회의 등록</button>` : ''}</div>
+      <div class="page-actions">${ctx.isAdmin ? html`<a class="btn" href="#/roster-image">명단 이미지</a><button class="btn primary" data-create>회의 등록</button>` : ''}</div>
     </div>
     <div class="card"><div class="table-wrap">
       ${meetings.length ? html`<table class="table">
